@@ -1,0 +1,5 @@
+/home/kpapantoniou/MyProjects/Optimization_bonus_project_2024/build_2/CMakeFiles/optimization_project.dir
+/home/kpapantoniou/MyProjects/Optimization_bonus_project_2024/build_2/CMakeFiles/clean_generated.dir
+/home/kpapantoniou/MyProjects/Optimization_bonus_project_2024/build_2/CMakeFiles/run.dir
+/home/kpapantoniou/MyProjects/Optimization_bonus_project_2024/build_2/CMakeFiles/edit_cache.dir
+/home/kpapantoniou/MyProjects/Optimization_bonus_project_2024/build_2/CMakeFiles/rebuild_cache.dir
