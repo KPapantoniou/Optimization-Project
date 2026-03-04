@@ -20,6 +20,7 @@ double NewtonTr::objectiveFunction(const vector<double>& beta, const vector<arra
     double mse = 0.0;
 
     vector<double> denormalizedBeta = beta;
+    denormalizeBeta(denormalizedBeta);
     vector<array<double, 5>> normilizedData = data;
     for (const auto& row : normilizedData) {
         double v = row[0];
@@ -41,13 +42,13 @@ vector<double> NewtonTr::gradient(const vector<double>& beta, const vector<array
     vector<double> grad(n, 0.0);
 
     vector<array<double, 5>> normilizedData = data;
-    vector<double> betaPerturbed = beta;
-    vector<double> betaMinus = beta;
+    vector<double> betaDenorm = beta;
+    denormalizeBeta(betaDenorm);
     double predictPlus = 0.0;
     double predictMinus = 0.0;
 
     for (const auto& row : normilizedData) {
-        double predicted = predictEnergy(beta, row[0], row[1], row[2], row[3]);
+        double predicted = predictEnergy(betaDenorm, row[0], row[1], row[2], row[3]);
         double residual = (predicted - row[4]);
         double v = row[0];
         double theta = row[1];
@@ -57,12 +58,17 @@ vector<double> NewtonTr::gradient(const vector<double>& beta, const vector<array
 
         grad[0] += 2*residual*v*v;
         grad[1] += 2*residual*sin(theta);
-        grad[2] += 2*residual*exp(beta[3]*T);
-        grad[3] += 2*residual*beta[2]*T*exp(beta[3]*T);
+        grad[2] += 2*residual*exp(betaDenorm[3]*T);
+        grad[3] += 2*residual*betaDenorm[2]*T*exp(betaDenorm[3]*T);
         grad[4] += 2*residual*log(P);
     }
     for (size_t i = 0; i < n; ++i) {
         grad[i] /= normilizedData.size();
+    }
+
+    vector<double> spans = {90.0, 20.0, 150.0, 0.09, 0.9};
+    for (size_t i = 0; i < n; ++i) {
+        grad[i] *= spans[i];
     }
 
     return grad;
@@ -77,6 +83,8 @@ vector<vector<double>> NewtonTr::hessian(const vector<double>& beta, const vecto
     double h = 1e-5; 
     vector<vector<double>> hessian(n, vector<double>(n, 0.0));
     vector<array<double, 5>> normilizedData = data;
+    vector<double> betaDenorm = beta;
+    denormalizeBeta(betaDenorm);
     vector<double> energy_grad(n, 0.0);
     for(const auto& row : normilizedData){
         double v = row[0];
@@ -87,24 +95,31 @@ vector<vector<double>> NewtonTr::hessian(const vector<double>& beta, const vecto
 
         energy_grad[0] = v*v;
         energy_grad[1] = sin(theta);
-        energy_grad[2] = exp(beta[3]*T);
-        energy_grad[3] = beta[2]*T*exp(beta[3]*T);
+        energy_grad[2] = exp(betaDenorm[3]*T);
+        energy_grad[3] = betaDenorm[2]*T*exp(betaDenorm[3]*T);
         energy_grad[4] = log(P);
 
-        double energy_diff = predictEnergy(beta, v, theta, T, P) - E;
+        double energy_diff = predictEnergy(betaDenorm, v, theta, T, P) - E;
         for (size_t i = 0; i < n; i++) {
             for (size_t j = 0; j < n; j++) {
                 hessian[i][j] += energy_grad[i] * energy_grad[j];
             }
         }
 
-        hessian[3][3] += energy_diff * beta[2] * T * T * exp(beta[3] * T);
-        hessian[2][3] += energy_diff * T * exp(beta[3] * T);
-        hessian[3][2] += energy_diff * T * exp(beta[3] * T);
+        hessian[3][3] += energy_diff * betaDenorm[2] * T * T * exp(betaDenorm[3] * T);
+        hessian[2][3] += energy_diff * T * exp(betaDenorm[3] * T);
+        hessian[3][2] += energy_diff * T * exp(betaDenorm[3] * T);
     }
     for(size_t i = 0; i < n; i++){
         for(size_t j = 0; j < n; j++){
             hessian[i][j] *= 2.0/ data.size();
+        }
+    }
+
+    vector<double> spans = {90.0, 20.0, 150.0, 0.09, 0.9};
+    for (size_t i = 0; i < n; i++) {
+        for (size_t j = 0; j < n; j++) {
+            hessian[i][j] *= spans[i] * spans[j];
         }
     }
 
@@ -155,7 +170,7 @@ pair<vector<double>,double> NewtonTr::optimize(const vector<array<double, 5>>& d
        
         if(rho>hta){
             beta = addVectors(beta, pk);
-            clampParameters(beta);
+            clampParametersNormalized(beta);
         }
         
         k++;

@@ -15,6 +15,7 @@ double NelderMead::objectiveFunction(const vector<double> &beta, const vector<ar
     evalCount++;
     double mse = 0.0;
     vector<double> denormalizedBeta = beta;
+    denormalizeBeta(denormalizedBeta);
     vector<array<double, 5>> normilizedData = data;
     for (const auto& row : normilizedData) {
         double v = row[0];
@@ -38,10 +39,9 @@ vector<vector<double>> NelderMead::initializeSimplex(const vector<double>& initi
 
     for (int i = 1; i < numParams + 1; ++i) {
         for (int j = 0; j < numParams; ++j) {
-            double span = parameterRanges[j].maxValue - parameterRanges[j].minValue;
-            simplex[i][j] = initialPoints[j] + generateRandom(-0.1, 0.1) * span;
+            simplex[i][j] = initialPoints[j] + generateRandom(-0.1, 0.1);
         }
-        clampParameters(simplex[i]);
+        clampParametersNormalized(simplex[i]);
     }
 
     return simplex;
@@ -96,7 +96,7 @@ pair<vector<double>,double> NelderMead::optimize(const vector<array<double, 5>>&
         for (int j = 0; j < simplex[0].size(); j++) {
             reflection[j] = (1 + reflection_coefficient) * centroid[j] - reflection_coefficient * simplex.back()[j];
         }
-        clampParameters(reflection);
+        clampParametersNormalized(reflection);
         double reflectedValue = objectiveFunction(reflection, data);
         double worstValue = objectiveFunction(simplex.back(), data);
 
@@ -110,7 +110,7 @@ pair<vector<double>,double> NelderMead::optimize(const vector<array<double, 5>>&
             for (int j = 0; j < simplex[0].size(); j++) {
                 expansion[j] = (1 + expansion_coefficient) * centroid[j] - expansion_coefficient * simplex.back()[j];
             }
-            clampParameters(expansion);
+            clampParametersNormalized(expansion);
             double expandedValue = objectiveFunction(expansion, data);
             
 
@@ -132,7 +132,7 @@ pair<vector<double>,double> NelderMead::optimize(const vector<array<double, 5>>&
                 for (int j = 0; j < simplex[0].size(); j++) {
                     contraction[j] = (1 + contraction_coefficient) * centroid[j] - contraction_coefficient * simplex.back()[j];
                 }
-                clampParameters(contraction);
+                clampParametersNormalized(contraction);
                 double contractedValue = objectiveFunction(contraction, data);
                 
 
@@ -145,7 +145,7 @@ pair<vector<double>,double> NelderMead::optimize(const vector<array<double, 5>>&
                         for (int j = 0; j < simplex[i].size(); j++) {
                             simplex[i][j] = simplex[0][j] + 0.5 * (simplex[i][j] - simplex[0][j]);
                         }
-                        clampParameters(simplex[i]);
+                        clampParametersNormalized(simplex[i]);
                     }
                   
                 }

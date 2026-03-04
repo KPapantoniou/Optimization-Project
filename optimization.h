@@ -8,6 +8,7 @@ class OptimizationAlgorithm {
 public:
 
     OptimizationAlgorithm(int maxIterations, double tolerance);
+    virtual bool usesNormalized() const { return true; }
 
     virtual std::pair<std::vector<double>,double> optimize(
         const std::vector<std::array<double, 5>>& data_train,

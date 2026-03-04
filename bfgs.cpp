@@ -17,6 +17,7 @@ double BFGS::objectiveFunction(const vector<double>& beta, const vector<array<do
     evalCount++;
     double mse = 0.0;
     vector<double> denormalizedBeta = beta;
+    denormalizeBeta(denormalizedBeta);
     vector<array<double, 5>> normilizedData = data;
     for (const auto& row : normilizedData) {
         double v = row[0];
@@ -37,23 +38,34 @@ double BFGS::objectiveFunction(const vector<double>& beta, const vector<array<do
 double BFGS::lineSearch(const vector<double>& x, const vector<double>& p, const vector<array<double, 5>>& data) {
     const double c1 = 1e-4;
     const double c2 = 0.9;
-    const double alpha_max = 10.0;
+    const double alpha_max_cap = 10.0;
     const int max_iters = 50;
 
     double phi0 = objectiveFunction(x, data);
     vector<double> grad0 = NewtonTr::gradient(x, data);
     double phi_prime0 = NewtonTr::dotProduct(grad0, p);
     if (phi_prime0 >= 0.0) {
-        return 1e-3;
+        return 0.0;
+    }
+
+    double alpha_max = alpha_max_cap;
+    for (size_t i = 0; i < x.size(); ++i) {
+        if (p[i] > 0.0) {
+            alpha_max = min(alpha_max, (1.0 - x[i]) / p[i]);
+        } else if (p[i] < 0.0) {
+            alpha_max = min(alpha_max, (0.0 - x[i]) / p[i]);
+        }
+    }
+    if (alpha_max <= 0.0) {
+        return 0.0;
     }
 
     double alpha_prev = 0.0;
-    double alpha = 1.0;
+    double alpha = min(1.0, alpha_max);
     double phi_prev = phi0;
 
     for (int i = 0; i < max_iters; ++i) {
         vector<double> x_new = NewtonTr::addVectors(x, scalarMultiplyVector(alpha, p));
-        clampParameters(x_new);
         double phi_alpha = objectiveFunction(x_new, data);
 
         if ((phi_alpha > phi0 + c1 * alpha * phi_prime0) || (i > 0 && phi_alpha >= phi_prev)) {
@@ -135,15 +147,31 @@ pair<vector<double>,double> BFGS::optimize(const vector<array<double, 5>>& data,
             vector<double> pk = NewtonTr::negateVector(NewtonTr::matrixVectorMultiplication(hessian_matrix_inverse,grad));
 
             alpha = lineSearch(beta,pk,data);
+            if (alpha == 0.0) {
+                for (size_t i = 0; i < hessian_matrix_inverse.size(); ++i) {
+                    for (size_t j = 0; j < hessian_matrix_inverse.size(); ++j) {
+                        hessian_matrix_inverse[i][j] = (i == j) ? 1.0 : 0.0;
+                    }
+                }
+                pk = NewtonTr::negateVector(grad);
+                alpha = lineSearch(beta, pk, data);
+            }
 
             beta = NewtonTr::addVectors(beta,scalarMultiplyVector(alpha,pk));
-            clampParameters(beta);
 
             sk = NewtonTr::addVectors(beta,NewtonTr::negateVector(beta_old));
 
             yk = NewtonTr::addVectors(NewtonTr::gradient(beta,data),NewtonTr::negateVector(grad));
 
-            hessian_matrix_inverse = BFGSUpdate(hessian_matrix_inverse,sk,yk);
+            if (NewtonTr::dotProduct(yk, sk) > 1e-12) {
+                hessian_matrix_inverse = BFGSUpdate(hessian_matrix_inverse,sk,yk);
+            } else {
+                for (size_t i = 0; i < hessian_matrix_inverse.size(); ++i) {
+                    for (size_t j = 0; j < hessian_matrix_inverse.size(); ++j) {
+                        hessian_matrix_inverse[i][j] = (i == j) ? 1.0 : 0.0;
+                    }
+                }
+            }
 
             grad = NewtonTr::gradient(beta, data);
             

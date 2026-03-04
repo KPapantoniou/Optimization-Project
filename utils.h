@@ -38,6 +38,7 @@ std::vector<std::array<double, 5>> readData(const std::string& filename);
 double predictEnergy(const std::vector<double>& beta, double v, double theta, double T, double P);
 double generateRandom(double lower, double upper);
 void clampParameters(std::vector<double>& beta);
+void clampParametersNormalized(std::vector<double>& beta);
 void logResults(const std::string& filename, const std::vector<double>& beta, double mse, double k, double experiment);
 void initializeLogFile(const std::string& filename);
 void generateAndSaveInitialPoints(const std::vector<ParameterRange>& parameterRanges, const std::string& filename);

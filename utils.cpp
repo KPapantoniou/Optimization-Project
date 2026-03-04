@@ -52,6 +52,12 @@ void clampParameters(vector<double>& beta) {
     }
 }
 
+void clampParametersNormalized(vector<double>& beta) {
+    for (size_t i = 0; i < beta.size(); ++i) {
+        beta[i] = max(0.0, min(beta[i], 1.0));
+    }
+}
+
 void logResults(const string& filename, const vector<double>& parameters, double mse, double k, double experiment) {
     ofstream logFile(filename, ios::app); 
     if (logFile.is_open()) {
@@ -112,24 +118,35 @@ vector<double> runExperiment(OptimizationAlgorithm& optimizer, const vector<arra
     mse_test_results.reserve(RUNS);
     for (int experiment = 0; experiment <RUNS; ++experiment) {
         vector<double> initialPoint = initialPoints[experiment];
-        clampParameters(initialPoint);
+        if (optimizer.usesNormalized()) {
+            normalizeBeta(initialPoint);
+            clampParametersNormalized(initialPoint);
+        } else {
+            clampParameters(initialPoint);
+        }
 
         auto result = optimizer.optimize(data_train, initialPoint);
         auto bestParameters = result.first;
         auto k = result.second;
-        clampParameters(bestParameters);
+        vector<double> bestParametersDenorm = bestParameters;
+        if (optimizer.usesNormalized()) {
+            clampParametersNormalized(bestParametersDenorm);
+            denormalizeBeta(bestParametersDenorm);
+        } else {
+            clampParameters(bestParametersDenorm);
+        }
         double mse_train = 0.0;
 
         for (const auto& row : data_train) {
-            double predicted = predictEnergy(bestParameters, row[0], row[1], row[2], row[3]);
+            double predicted = predictEnergy(bestParametersDenorm, row[0], row[1], row[2], row[3]);
             mse_train += (-row[4] + predicted) * (-row[4] + predicted);
         }
         mse_train /= data_train.size();
 
-        logResults(resultFile, bestParameters, mse_train, k, experiment);
+        logResults(resultFile, bestParametersDenorm, mse_train, k, experiment);
         double mse_test = 0.0;
         for (const auto& row : data_test) {
-            double predicted = predictEnergy(bestParameters, row[0], row[1], row[2], row[3]);
+            double predicted = predictEnergy(bestParametersDenorm, row[0], row[1], row[2], row[3]);
             mse_test += (predicted - row[4]) * (predicted - row[4]);
         }
         mse_test /= data_test.size();

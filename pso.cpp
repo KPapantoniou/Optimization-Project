@@ -15,6 +15,7 @@ double PSO::objectiveFunction(const std::vector<double>& beta, const std::vector
     evalCount++;
     double mse = 0.0;
     std::vector<double> denormalizedBeta = beta;
+    denormalizeBeta(denormalizedBeta);
     std::vector<std::array<double, 5>> normalizedData = data;
     for (const auto& row : normalizedData) {
         double v = row[0];
@@ -103,10 +104,9 @@ std::vector<double> PSO::initializeVelocity(const std::vector<double>& initialSp
 std::vector<double> PSO::initialSpace(const std::vector<double>& initialPoint) {
     std::vector<double> candidate = initialPoint;
     for (size_t i = 0; i < candidate.size(); ++i) {
-        double span = parameterRanges[i].maxValue - parameterRanges[i].minValue;
-        candidate[i] += generateRandom(-0.1, 0.1) * span;
+        candidate[i] += generateRandom(-0.1, 0.1);
     }
-    clampParameters(candidate);
+    clampParametersNormalized(candidate);
     return candidate;
 }
 
@@ -126,7 +126,7 @@ std::vector<double> PSO::updatePosition(const std::vector<double>& position, con
     for (size_t i = 0; i < position.size(); ++i) {
         newPosition[i] = position[i] + velocity[i];
     }
-    clampParameters(newPosition);
+    clampParametersNormalized(newPosition);
     return newPosition;
 }
 

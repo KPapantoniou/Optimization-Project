@@ -12,6 +12,7 @@ class GA : public OptimizationAlgorithm {
 public:
     const vector<int> bitsPerParam = {17, 15, 18, 7, 10};
     GA(int maxIterations, double tolerance);
+    bool usesNormalized() const override { return false; }
     pair<vector<double>,double> optimize(
         const vector<array<double, 5>>& data_train,
         const vector<double>& initialPoint) override;
