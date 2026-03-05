@@ -1,0 +1,16 @@
+*
+!*/
+!.gitignore
+!CMakeLists.txt
+!*.cpp
+!*.h
+!*.py
+!*.pdf
+!data_*
+
+# Generated/build outputs
+build/
+build-*/
+build_*/
+build.local/
+build-local/
