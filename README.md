@@ -1,4 +1,4 @@
-# Optimization Bonus Project 2024
+# Optimization Project 
 
 This project fits a simple energy prediction model by optimizing five parameters using multiple algorithms and comparing their performance. It runs 30 randomized experiments per algorithm, logs train/test mean squared error (MSE), and generates summary statistics plus a significance table.
 
