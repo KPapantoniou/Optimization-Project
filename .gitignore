@@ -14,3 +14,7 @@ build-*/
 build_*/
 build.local/
 build-local/
+
+# Ignore python directory entirely
+python/
+python/
